@@ -1,8 +1,9 @@
 // Import dependencies
 const fs = require("fs");
+const path = require("path");
 const moment = require("moment");
 const PDFDocument = require("pdfkit");
-const nodemailer = require("nodemailer");
+const sgMail = require("@sendgrid/mail");
 require('dotenv').config()
 
 // Create the PDF document
@@ -12,7 +13,7 @@ const doc = new PDFDocument({
 });
 
 // The name
-const name = "test"
+const name = "smc181002"
 const email = "meherchaitanya18802@gmail.com"
 
 // Pipe the PDF into an name.pdf file
@@ -36,29 +37,38 @@ doc.fontSize(17).text(moment().format("MMMM Do YYYY"), -275, 430, {
 // Finalize the PDF and end the stream
 doc.end();
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL,
-    pass: process.env.PASS
-  }
-});
+// sendgrid mail
 
-console.log(process.env.EMAIL);
+pathToAttachment = path.join(__dirname, `${name}.pdf`);
+console.log(pathToAttachment);
 
-const mailOptions = {
-  from: process.env.EMAIL,
-  to: email,
-  subject: "Congratulations on completing the course - FOLK LMS",
-  text: `This mail is to congratulate ${name} for completing the course. Below is your certificate`,
+attachment = fs.readFileSync(pathToAttachment).toString("base64");
+console.log(attachment)
+
+sgMail.setApiKey(process.env.API_KEY);
+
+const message = {
+  to: "linuxusr69@gmail.com",
+  from: {
+    email: "meherchaitanya18802@gmail.com",
+    name: "Meher Chaitanya"
+  },
+  subject: "Hello there",
+  text: 'and easy to do anywhere, even with Node.js',
+  // templateId: "d-251ff38bb389401aab68db3b98990a26",
+  // dynamicTemplateData: {
+    // name: name,
+    // course: "Meditation",
+  // },
   attachments: [
-    {filename: `${name}.pdf`, path: `./${name}.pdf`}
+    {
+      content: attachment,
+      filename: `${name}.pdf`,
+      type: "application/pdf",
+      disposition: "attachment"
+    }
   ]
-}
+};
 
-transporter.sendMail(mailOptions, function (err, info) {
-   if(err)
-     console.log(err)
-   else
-     console.log(info);
-});
+sgMail.send(message);
+
